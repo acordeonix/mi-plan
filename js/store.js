@@ -16,6 +16,10 @@ export function mensajeAuth(e) {
   return 'No se pudo entrar: ' + ((e && (e.code || e.message)) || e);
 }
 
+// Firestore no acepta listas dentro de listas: las reglas [patrón, categoría] se guardan como {p, k}.
+function listasAFirestore(l) { const o = { ...l }; if (Array.isArray(o.reglas)) o.reglas = o.reglas.map((r) => (Array.isArray(r) ? { p: r[0], k: r[1] } : r)); return o; }
+function listasDeFirestore(l) { const o = { ...l }; if (Array.isArray(o.reglas)) o.reglas = o.reglas.map((r) => (Array.isArray(r) ? r : [r.p, r.k])); return o; }
+
 function clean(o) { return JSON.parse(JSON.stringify(o, (k, v) => (v === undefined ? null : v))); }
 
 // ---------------- Modo local ----------------
@@ -89,7 +93,7 @@ class FirebaseStore {
     const d = await getDoc(doc(this.db, `${this._base()}/meta/datos`));
     if (!d.exists()) return null;
     const l = await getDoc(doc(this.db, `${this._base()}/meta/listas`));
-    const out = { datos: d.data().datos, ...(l.exists() ? l.data() : {}) };
+    const out = { datos: d.data().datos, ...(l.exists() ? listasDeFirestore(l.data()) : {}) };
     for (const c of COLS) {
       const snap = await getDocs(collection(this.db, `${this._base()}/${c}`));
       out[c] = snap.docs.map((x) => x.data());
@@ -97,7 +101,7 @@ class FirebaseStore {
     return out;
   }
   async saveDatos(datos) { return this._w(() => this.F.setDoc(this.F.doc(this.db, `${this._base()}/meta/datos`), { datos: clean(datos), actualizado: this.F.serverTimestamp() })); }
-  async saveListas(listas) { return this._w(() => this.F.setDoc(this.F.doc(this.db, `${this._base()}/meta/listas`), clean(listas), { merge: true })); }
+  async saveListas(listas) { return this._w(() => this.F.setDoc(this.F.doc(this.db, `${this._base()}/meta/listas`), clean(listasAFirestore(listas)), { merge: true })); }
   async saveItem(col, item, key) { return this._w(() => this.F.setDoc(this.F.doc(this.db, `${this._base()}/${col}/${item[key]}`), clean(item))); }
   async saveItems(col, items, key) { return this._w(() => this._saveItems(col, items, key)); }
   async _saveItems(col, items, key) {

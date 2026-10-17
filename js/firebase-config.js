@@ -1,15 +1,10 @@
-// 1) Pega aquí la configuración de tu proyecto de Firebase
-//    (Consola de Firebase › Configuración del proyecto › Tus apps › App web › "firebaseConfig").
-//    Estos valores no son secretos: lo que protege tus datos son las reglas de Firestore (firestore.rules).
 export const firebaseConfig = {
-  apiKey: '',
-  authDomain: '',
-  projectId: '',
-  storageBucket: '',
-  messagingSenderId: '',
-  appId: '',
+  apiKey: 'AIzaSyA8uelYdWbG6cFfu08Lj-lG3aFrIYCScD4',
+  authDomain: 'mi-plan-financiero-bb670.firebaseapp.com',
+  projectId: 'mi-plan-financiero-bb670',
+  storageBucket: 'mi-plan-financiero-bb670.firebasestorage.app',
+  messagingSenderId: '876624774826',
+  appId: '1:876624774826:web:c66cb6d54b98d2be9a72d3',
 };
 
-// 2) Tu correo de Google: la app sólo deja entrar a estas cuentas.
-//    Pon el MISMO correo en firestore.rules.
 export const ALLOWED_EMAILS = ['info@acordeonixs.com'];

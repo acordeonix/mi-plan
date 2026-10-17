@@ -5,6 +5,17 @@ const configurado = () => Boolean(firebaseConfig.apiKey && firebaseConfig.projec
 const COLS = ['semanas', 'cargos', 'suscripciones', 'movimientos'];
 const LS_KEY = 'plan_recapitalizacion_v1';
 
+export function mensajeAuth(e) {
+  const c = String((e && e.code) || '');
+  const host = location.hostname;
+  if (c.includes('unauthorized-domain')) return `Falta autorizar el dominio: en Firebase › Authentication › Configuración › Dominios autorizados agrega "${host}".`;
+  if (c.includes('api-key-not-valid') || c.includes('invalid-api-key')) return 'La apiKey de js/firebase-config.js no es válida. Cópiala otra vez de la consola de Firebase.';
+  if (c.includes('popup-closed') || c.includes('cancelled-popup')) return 'Se cerró la ventana de Google antes de terminar. Intenta otra vez.';
+  if (c.includes('operation-not-allowed')) return 'El acceso con Google no está habilitado en Firebase › Authentication › Método de acceso.';
+  if (c.includes('network')) return 'Sin conexión. Revisa tu internet e intenta otra vez.';
+  return 'No se pudo entrar: ' + ((e && (e.code || e.message)) || e);
+}
+
 function clean(o) { return JSON.parse(JSON.stringify(o, (k, v) => (v === undefined ? null : v))); }
 
 // ---------------- Modo local ----------------
@@ -34,6 +45,7 @@ class FirebaseStore {
     try {
       this.db = F.initializeFirestore(this.app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) });
     } catch { this.db = F.getFirestore(this.app); }
+    if (F.getRedirectResult) F.getRedirectResult(this.auth).catch((e) => onError(mensajeAuth(e)));
     F.onAuthStateChanged(this.auth, async (u) => {
       if (u && !ALLOWED_EMAILS.map((e) => e.toLowerCase()).includes(String(u.email).toLowerCase())) {
         await F.signOut(this.auth);
@@ -45,8 +57,13 @@ class FirebaseStore {
   }
   async signIn() {
     const p = new this.F.GoogleAuthProvider();
+    p.setCustomParameters({ prompt: 'select_account' });
     try { await this.F.signInWithPopup(this.auth, p); }
-    catch (e) { if (String(e.code).includes('popup')) await this.F.signInWithRedirect(this.auth, p); else throw e; }
+    catch (e) {
+      const c = String(e.code || '');
+      if (c === 'auth/popup-blocked' || c === 'auth/operation-not-supported-in-this-environment') await this.F.signInWithRedirect(this.auth, p);
+      else throw e;
+    }
   }
   async signOut() { await this.F.signOut(this.auth); }
   _base() { return `users/${this.user.uid}`; }

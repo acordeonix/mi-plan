@@ -1,5 +1,5 @@
 import { calcularTodo, mIdx, mKey, CATEGORIAS, REGLAS_BASE, categorizar, catById, cierreMes, historialCierres } from './engine.js';
-import { crearStore, KEYS } from './store.js';
+import { crearStore, KEYS, mensajeAuth } from './store.js';
 import { money, money2, pct, int, mes, mesLargo, dia, esc, hoyISO, uid, getPath, setPath } from './format.js';
 import { SECCIONES_DATOS, CAMPOS_METAS, CAMPOS_SUENOS, CAMPOS_RETIRO, CONSEJOS_BASE, datosEjemplo } from './schema.js';
 
@@ -591,7 +591,7 @@ function onChange(e) {
 }
 async function onClick(e) {
   const b = e.target.closest('[data-action]'); if (!b || b.tagName === 'SELECT') return;
-  const a = b.dataset.action, S = R.SEM;
+  const a = b.dataset.action, S = (R && R.SEM) || [];
   if (a === 'semPrev' || a === 'semNext') { const i = S.findIndex((s) => s.fecha === semSel); semSel = S[Math.max(0, Math.min(S.length - 1, i + (a === 'semPrev' ? -1 : 1)))].fecha; render(); }
   if (a === 'goSem') { e.preventDefault(); semSel = b.dataset.fecha; render(); window.scrollTo(0, 0); }
   if (a === 'addCargo') {
@@ -615,7 +615,12 @@ async function onClick(e) {
   if (a === 'recategorizar') { const cambia = state.movimientos.filter((m) => (m.categoria || 'sinCategoria') === 'sinCategoria').map((m) => { const k = categorizar(m.descripcion, state.reglas); return k !== 'sinCategoria' ? Object.assign(m, { categoria: k }) : null; }).filter(Boolean);
     await guardar(() => store.saveItems('movimientos', cambia, 'id')); toast(`${cambia.length} movimientos clasificados`); render(); }
   if (a === 'goMes') { e.preventDefault(); mesCierre = b.dataset.mes; render(); window.scrollTo(0, 0); }
-  if (a === 'login') { try { await store.signIn(); } catch (err) { toast('No se pudo entrar: ' + err.message); } }
+  if (a === 'login') {
+    const msg = $('#login-msg'); msg.textContent = 'Abriendo Google…'; b.disabled = true;
+    try { await store.signIn(); msg.textContent = ''; }
+    catch (err) { console.error(err); msg.textContent = mensajeAuth(err); }
+    finally { b.disabled = false; }
+  }
   if (a === 'logout') { await store.signOut(); }
   if (a === 'menu') document.body.classList.toggle('nav-open');
   if (a === 'tema') { const t = tema() === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.setItem('tema', t); } catch {} C = PAL[t]; if (state) render(); }

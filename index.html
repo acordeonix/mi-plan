@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0d1117">
+  <script>try { if (localStorage.getItem('tema') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
+  <title>Mi plan financiero</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231F3A5F'/%3E%3Cpath d='M14 44 L26 32 L34 38 L50 20' stroke='%2364C78A' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="vendor/chart.umd.min.js"></script>
+</head>
+<body class="logged-out">
+  <div id="login">
+    <div class="login-card">
+      <div class="logo">↗</div>
+      <h1>Mi plan financiero</h1>
+      <p>Recapitalización, metas y retiro. Sólo tú tienes acceso.</p>
+      <button class="btn primary big" data-action="login">Entrar con Google</button>
+      <p id="login-msg" class="neg"></p>
+    </div>
+  </div>
+  <div id="shell">
+    <aside id="side">
+      <div class="brand"><span class="logo sm">↗</span> Mi plan</div>
+      <nav id="nav"></nav>
+      <div class="side-foot"><div id="user" class="muted"></div><button class="btn ghost" data-action="tema" title="Cambiar tema claro/oscuro">◐</button><button class="btn ghost" data-action="logout">Salir</button></div>
+    </aside>
+    <div id="content">
+      <header id="top">
+        <button class="btn ghost menu" data-action="menu" aria-label="Menú">☰</button>
+        <h2 id="titulo">Inicio</h2>
+        <span id="modo" class="badge warn" hidden>Modo local: los datos sólo viven en este navegador</span>
+        <span id="sync" class="sync"></span>
+      </header>
+      <main id="main"></main>
+    </div>
+  </div>
+  <div id="toast"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

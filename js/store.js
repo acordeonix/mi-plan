@@ -27,6 +27,8 @@ class LocalStore {
   _write(s) { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch (e) { console.warn(e); } }
   async load() { return this._read(); }
   async saveAll(state) { this._write(clean(state)); }
+  watch() {}
+  unwatch() {}
   async saveDatos(datos) { const s = this._read() || {}; s.datos = datos; this._write(clean(s)); }
   async saveListas(listas) { const s = this._read() || {}; Object.assign(s, listas); this._write(clean(s)); }
   async saveItem(col, item, key) { const s = this._read() || {}; s[col] = s[col] || []; const i = s[col].findIndex((x) => x[key] === item[key]); if (i >= 0) s[col][i] = item; else s[col].push(item); this._write(clean(s)); }
@@ -65,8 +67,21 @@ class FirebaseStore {
       else throw e;
     }
   }
-  async signOut() { await this.F.signOut(this.auth); }
+  async signOut() { this.unwatch(); await this.F.signOut(this.auth); }
   _base() { return `users/${this.user.uid}`; }
+  // Escucha cambios hechos desde otro dispositivo y avisa (con un pequeño retraso para agrupar cambios).
+  watch(onRemote) {
+    this.unwatch();
+    const { onSnapshot, doc, collection } = this.F;
+    let t = null;
+    const avisar = (snap) => {
+      if (snap.metadata.hasPendingWrites || snap.metadata.fromCache) return; // cambios propios o sin confirmar
+      clearTimeout(t); t = setTimeout(onRemote, 700);
+    };
+    const refs = [doc(this.db, `${this._base()}/meta/datos`), doc(this.db, `${this._base()}/meta/listas`), ...COLS.map((c) => collection(this.db, `${this._base()}/${c}`))];
+    this._subs = refs.map((r) => { let primera = true; return onSnapshot(r, { includeMetadataChanges: false }, (s) => { if (primera) { primera = false; return; } avisar(s); }, (e) => console.warn(e)); });
+  }
+  unwatch() { (this._subs || []).forEach((u) => u()); this._subs = []; }
   async load() {
     const { doc, getDoc, collection, getDocs } = this.F;
     const d = await getDoc(doc(this.db, `${this._base()}/meta/datos`));

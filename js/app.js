@@ -639,6 +639,23 @@ async function importar(file) {
   } catch (e) { toast('No se pudo importar: ' + e.message); }
 }
 
+// Cambios hechos en otro dispositivo: recarga los datos sin interrumpir lo que estés escribiendo.
+let recargaPendiente = false;
+async function recargarRemoto() {
+  const el = document.activeElement;
+  if (el && el.matches && el.matches('input, textarea, select') && document.getElementById('main').contains(el)) {
+    if (!recargaPendiente) { recargaPendiente = true; el.addEventListener('blur', () => { recargaPendiente = false; setTimeout(recargarRemoto, 300); }, { once: true }); }
+    return;
+  }
+  try {
+    const s = await store.load();
+    if (!s || !s.datos) return;
+    const y = window.scrollY;
+    state = normalizar(s); render(); window.scrollTo(0, y);
+    setStatus('Actualizado desde otro dispositivo', 'ok');
+  } catch (e) { console.warn(e); }
+}
+
 // ---------------- arranque ----------------
 async function arrancar() {
   $('#nav').innerHTML = navHTML();
@@ -657,6 +674,7 @@ async function arrancar() {
       if (!s || !s.datos) { location.hash = '#datos'; toast('Importa tu respaldo en Datos y respaldo'); }
       setStatus(store.modo === 'local' ? 'Modo local' : 'Sincronizado', 'ok');
       render();
+      store.watch(recargarRemoto);
     } catch (e) { console.error(e); setStatus('Error al cargar', 'err'); $('#main').innerHTML = card('No se pudieron cargar tus datos', `<p>${esc(e.message)}</p>`); }
   }, (msg) => { $('#login-msg').textContent = msg; });
 }

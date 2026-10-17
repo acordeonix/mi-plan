@@ -525,8 +525,8 @@ function navHTML() {
 // ---------------- guardado ----------------
 async function guardar(fn) {
   setStatus('Guardando…', 'busy');
-  try { await fn(); setStatus(store.modo === 'local' ? 'Guardado en este navegador' : 'Guardado', 'ok'); }
-  catch (e) { console.error(e); setStatus('Error al guardar', 'err'); toast('No se pudo guardar: ' + (e.message || e)); }
+  try { await fn(); setStatus(store.modo === 'local' ? 'Guardado en este navegador' : 'Guardado', 'ok'); return true; }
+  catch (e) { console.error(e); setStatus('Error al guardar', 'err'); toast('No se pudo guardar: ' + (e.message || e)); return false; }
 }
 function guardarDatos() { clearTimeout(saveTimer); saveTimer = setTimeout(() => guardar(() => store.saveDatos(state.datos)), 500); }
 const guardarListas = () => guardar(() => store.saveListas({ pendientes: state.pendientes, consejos: state.consejos, listaEspera: state.listaEspera, ui: state.ui, reglas: state.reglas, cierres: state.cierres }));
@@ -635,7 +635,11 @@ async function importar(file) {
     if (!s.datos) throw new Error('El archivo no tiene datos del plan');
     if (!confirm('Esto reemplaza todo lo que hay en la app con el respaldo. ¿Continuar?')) return;
     state = normalizar({ datos: s.datos, semanas: s.semanas, cargos: s.cargos, suscripciones: s.suscripciones, pendientes: s.pendientes, consejos: s.consejos, listaEspera: s.listaEspera, ui: s.ui, movimientos: s.movimientos, reglas: s.reglas, cierres: s.cierres });
-    await guardar(() => store.saveAll(state)); toast('Respaldo importado'); location.hash = '#inicio'; render();
+    setStatus('Importando…', 'busy');
+    const ok = await guardar(() => store.saveAll(state));
+    if (!ok) return;
+    toast(`Respaldo importado: ${state.semanas.length} semanas, ${state.cargos.length} cargos, ${state.suscripciones.length} suscripciones`);
+    location.hash = '#inicio'; render();
   } catch (e) { toast('No se pudo importar: ' + e.message); }
 }
 

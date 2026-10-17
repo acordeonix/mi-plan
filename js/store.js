@@ -76,7 +76,9 @@ class FirebaseStore {
     let t = null;
     const avisar = (snap) => {
       if (snap.metadata.hasPendingWrites || snap.metadata.fromCache) return; // cambios propios o sin confirmar
-      clearTimeout(t); t = setTimeout(onRemote, 700);
+      // Espera a que no haya escrituras propias en curso (p. ej. importando) antes de recargar.
+      const intentar = () => { if ((this._writing || 0) > 0 || Date.now() - (this._last || 0) < 1500) { t = setTimeout(intentar, 800); return; } onRemote(); };
+      clearTimeout(t); t = setTimeout(intentar, 700);
     };
     const refs = [doc(this.db, `${this._base()}/meta/datos`), doc(this.db, `${this._base()}/meta/listas`), ...COLS.map((c) => collection(this.db, `${this._base()}/${c}`))];
     this._subs = refs.map((r) => { let primera = true; return onSnapshot(r, { includeMetadataChanges: false }, (s) => { if (primera) { primera = false; return; } avisar(s); }, (e) => console.warn(e)); });
@@ -94,18 +96,22 @@ class FirebaseStore {
     }
     return out;
   }
-  async saveDatos(datos) { await this.F.setDoc(this.F.doc(this.db, `${this._base()}/meta/datos`), { datos: clean(datos), actualizado: this.F.serverTimestamp() }); }
-  async saveListas(listas) { await this.F.setDoc(this.F.doc(this.db, `${this._base()}/meta/listas`), clean(listas), { merge: true }); }
-  async saveItem(col, item, key) { await this.F.setDoc(this.F.doc(this.db, `${this._base()}/${col}/${item[key]}`), clean(item)); }
-  async saveItems(col, items, key) {
+  async saveDatos(datos) { return this._w(() => this.F.setDoc(this.F.doc(this.db, `${this._base()}/meta/datos`), { datos: clean(datos), actualizado: this.F.serverTimestamp() })); }
+  async saveListas(listas) { return this._w(() => this.F.setDoc(this.F.doc(this.db, `${this._base()}/meta/listas`), clean(listas), { merge: true })); }
+  async saveItem(col, item, key) { return this._w(() => this.F.setDoc(this.F.doc(this.db, `${this._base()}/${col}/${item[key]}`), clean(item))); }
+  async saveItems(col, items, key) { return this._w(() => this._saveItems(col, items, key)); }
+  async _saveItems(col, items, key) {
     for (let i = 0; i < items.length; i += 400) {
       const b = this.F.writeBatch(this.db);
       items.slice(i, i + 400).forEach((it) => b.set(this.F.doc(this.db, `${this._base()}/${col}/${it[key]}`), clean(it)));
       await b.commit();
     }
   }
-  async deleteItem(col, id) { await this.F.deleteDoc(this.F.doc(this.db, `${this._base()}/${col}/${id}`)); }
-  async saveAll(state) {
+  async deleteItem(col, id) { return this._w(() => this.F.deleteDoc(this.F.doc(this.db, `${this._base()}/${col}/${id}`))); }
+  // Cuenta escrituras en curso para no recargar a media escritura.
+  async _w(fn) { this._writing = (this._writing || 0) + 1; try { return await fn(); } finally { this._writing--; this._last = Date.now(); } }
+  async saveAll(state) { return this._w(() => this._saveAll(state)); }
+  async _saveAll(state) {
     const { writeBatch, doc, collection, getDocs } = this.F;
     // borra colecciones actuales y escribe todo (importar respaldo)
     for (const c of COLS) {

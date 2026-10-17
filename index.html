@@ -8,6 +8,12 @@
   <script>try { if (localStorage.getItem('tema') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
   <title>Mi plan financiero</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231F3A5F'/%3E%3Cpath d='M14 44 L26 32 L34 38 L50 20' stroke='%2364C78A' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mi plan">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <link rel="stylesheet" href="css/styles.css">
   <script src="vendor/chart.umd.min.js"></script>
 </head>
@@ -39,5 +45,6 @@
   </div>
   <div id="toast"></div>
   <script type="module" src="js/app.js"></script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 </body>
 </html>

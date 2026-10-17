@@ -122,3 +122,4 @@ textarea.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fon
 .alertas li.ok { background: var(--ok-bg); color: var(--ok); } .alertas li.bad { background: var(--bad-bg); color: var(--bad); } .alertas li.warn { background: var(--warn-bg); color: var(--warn); }
 .csvmap { margin-top: 12px; padding: 12px; border: 1px dashed var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 10px; }
 select.warnsel { border-color: var(--warn); background: var(--warn-bg); }
+[hidden] { display: none !important; }

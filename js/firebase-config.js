@@ -1,5 +1,5 @@
 export const firebaseConfig = {
-  apiKey: 'AIzaSyA8uelYdWbG6cFfu08Lj-lG3aFrIYCScD4',
+    apiKey: 'AIzaSyA8uelYdWbG6cfFu08Lj-lG3aFrIYCScD4',
   authDomain: 'mi-plan-financiero-bb670.firebaseapp.com',
   projectId: 'mi-plan-financiero-bb670',
   storageBucket: 'mi-plan-financiero-bb670.firebasestorage.app',

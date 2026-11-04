@@ -386,9 +386,9 @@ function vAjustes(main) {
         ${mercado.error ? `<p class="banner error">Último error de Banxico: ${esc(mercado.error)}</p>` : ''}
       </div>
       <div class="card"><h3>Apariencia</h3>
-        <label class="mini-form">Tema <select id="selTema">${[['matriz', 'Matriz (negro y verde)'], ['claro', 'Claro'], ['oscuro', 'Oscuro'], ['auto', 'Automático (según tu equipo)']].map(([v, l]) => `<option value="${v}" ${(document.documentElement.dataset.theme || 'matriz') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+        <label class="mini-form">Tema <select id="selTema">${[['matriz', 'Matriz (negro y verde)'], ['light', 'Claro'], ['dark', 'Oscuro']].map(([v, l]) => `<option value="${v}" ${(document.documentElement.dataset.theme || 'matriz') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <label class="mini-form"><input type="checkbox" id="chkLluvia" ${window.lluviaActiva?.() ? 'checked' : ''}> Lluvia de caracteres de fondo (solo en tema Matriz)</label>
-        <p class="nota">Se guarda en este dispositivo.</p>
+        <p class="nota">Es el mismo tema de tu plan: si lo cambias aquí o con el botón ◐, cambia en las dos páginas. Se guarda en este dispositivo.</p>
       </div>
       <div class="card"><h3>Respaldo</h3>
         <p>Descarga tu lista, ajustes y operaciones de práctica (sin precios).</p>
@@ -502,7 +502,7 @@ document.addEventListener('change', async (ev) => {
   if (t.id === 'selActivo') { seleccion = t.value; render(); }
   else if (t.dataset.comp) { t.checked ? comparar.add(t.dataset.comp) : comparar.delete(t.dataset.comp); render(); }
   else if (t.closest('#fSim')) { const f = new FormData(t.form); sim = { id: f.get('id'), mensual: +f.get('mensual') || 0, inicial: +f.get('inicial') || 0, anios: +f.get('anios') }; render(); }
-  else if (t.id === 'selTema') { try { localStorage.setItem('inv_tema', t.value); } catch {} document.documentElement.dataset.theme = t.value; window.lluviaRefrescar?.(); render(); }
+  else if (t.id === 'selTema') ponerTema(t.value);
   else if (t.id === 'chkLluvia') { try { localStorage.setItem('inv_lluvia', t.checked ? '1' : '0'); } catch {} window.lluviaRefrescar?.(); }
   else if (t.id === 'inpInicial') { E.practica.inicial = Number(t.value) || 0; guardar(); render(); }
   else if (t.id === 'inpRestaurar' && t.files[0]) {
@@ -562,5 +562,18 @@ async function iniciar(user) {
 $('#btnLogin').onclick = () => store.signIn().catch((e) => { $('#loginError').textContent = e.message; });
 $('#btnSalir').onclick = () => store.signOut();
 $('#btnActualizar').onclick = () => actualizarTodo(true);
+const NOMBRE_TEMA = { matriz: 'Matriz', light: 'Claro', dark: 'Oscuro' };
+function ponerTema(t, avisar = false) {
+  if (!NOMBRE_TEMA[t]) t = 'matriz';
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('plan_tema', t); } catch {}
+  window.lluviaRefrescar?.(); render();
+  if (avisar) aviso(`Tema: ${NOMBRE_TEMA[t]}`, 'info', 1800);
+}
+$('#btnTema').onclick = () => ponerTema({ matriz: 'light', light: 'dark', dark: 'matriz' }[document.documentElement.dataset.theme] || 'matriz', true);
+// Si cambias el tema en tu plan (otra pestaña), aquí se actualiza solo
+addEventListener('storage', (e) => { if (e.key === 'plan_tema' && e.newValue) { document.documentElement.dataset.theme = e.newValue; window.lluviaRefrescar?.(); render(); } });
+// Valor viejo del primer tema Matriz
+if (!NOMBRE_TEMA[document.documentElement.dataset.theme]) ponerTema('matriz');
 store.init(iniciar, (m) => { $('#loginError').textContent = m; }).catch((e) => { $('#loginError').textContent = 'Error al iniciar: ' + e.message; });
 if (store.modo === 'local') { $('#modo').textContent = 'modo local'; $('#usuario').hidden = true; $('#btnSalir').hidden = true; }

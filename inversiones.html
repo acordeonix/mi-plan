@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap">
-  <link rel="stylesheet" href="css/inversiones.css">
-  <script>try { document.documentElement.dataset.theme = localStorage.getItem('inv_tema') || 'matriz'; } catch (e) { document.documentElement.dataset.theme = 'matriz'; }</script>
+  <link rel="stylesheet" href="css/inversiones.css?v=20261104b">
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem('plan_tema') || 'matriz'; } catch (e) { document.documentElement.dataset.theme = 'matriz'; }</script>
 </head>
 <body>
   <canvas id="lluvia" aria-hidden="true"></canvas>
@@ -19,6 +19,7 @@
     <div class="acciones">
       <span id="estado" class="estado"></span>
       <button id="btnActualizar" class="btn sec">Actualizar precios</button>
+      <button id="btnTema" class="btn sec tema-btn" title="Cambiar tema: Matriz, Claro u Oscuro">◐</button>
       <span id="usuario" class="usuario"></span>
       <button id="btnSalir" class="btn sec">Salir</button>
     </div>
@@ -38,7 +39,7 @@
 
   <dialog id="dlg"></dialog>
   <div id="toasts" class="toasts" aria-live="polite"></div>
-  <script type="module" src="js/inv/matriz.js"></script>
-  <script type="module" src="js/inv/app.js"></script>
+  <script type="module" src="js/inv/matriz.js?v=20261104b"></script>
+  <script type="module" src="js/inv/app.js?v=20261104b"></script>
 </body>
 </html>

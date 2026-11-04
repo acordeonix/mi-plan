@@ -5,7 +5,7 @@ import { lineas, mini, barras, PALETA } from './charts.js';
 import { vDecisiones, DECISIONES_DEFAULT, alertas, perfilDe } from './decisiones.js';
 import { leerPlan, capacidad } from './plan.js';
 import { vRanking, eventosRanking } from './ranking.js';
-import { vNoticias, eventosNoticias, llenarDetalle } from './noticias.js';
+import { vNoticias, eventosNoticias, llenarDetalle } from './noticias.js?v=20261104d';
 
 // ---------------- Estado ----------------
 const PREDETERMINADO = () => ({

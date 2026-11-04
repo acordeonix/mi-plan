@@ -280,3 +280,20 @@ table.rk td.spark { width: 110px; } table.rk .mini { height: 28px; width: 100px;
 :root[data-theme="matriz"] .filtro-temas button.sel { background: rgba(0, 255, 102, .16); color: #b8ffcc; box-shadow: 0 0 0 1px var(--acento) inset; }
 :root[data-theme="matriz"] .noticia img { filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(3) brightness(.8); }
 :root[data-theme="matriz"] .meta-n .chip.mio { background: var(--acento) !important; color: #000 !important; }
+.fin-n { align-items: center; flex: 0 1 auto; } .fin-n > * { flex: 0 0 auto; }
+.ultima-hora { background: color-mix(in srgb, var(--baja) 8%, var(--panel)); border: 1px solid color-mix(in srgb, var(--baja) 35%, transparent); border-radius: var(--radio); padding: 12px 16px; margin-bottom: 12px; }
+.ultima-hora h3 { color: var(--baja); display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.ultima-hora h3 small { color: var(--tenue); }
+.ultima-hora ul { margin: 0; padding: 0; list-style: none; }
+.ultima-hora li { padding: 6px 0; border-top: 1px solid var(--linea); }
+.ultima-hora li a { color: var(--texto); font-weight: 600; text-decoration: none; } .ultima-hora li a:hover { text-decoration: underline; }
+.ultima-hora small { color: var(--tenue); font-size: 12px; }
+.punto { width: 9px; height: 9px; border-radius: 50%; background: var(--baja); animation: latido 1.4s infinite; }
+@keyframes latido { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .punto { animation: none; } }
+.badge-uh { display: inline-block; font-size: 11px; font-weight: 700; color: #fff; background: var(--baja); padding: 1px 7px; border-radius: 4px; vertical-align: 2px; letter-spacing: .03em; }
+.noticia.urgente { border-color: color-mix(in srgb, var(--baja) 45%, var(--linea)); }
+.porque { margin-top: 6px; font-size: 11.5px; color: var(--tenue); font-style: italic; }
+:root[data-theme="matriz"] .ultima-hora { background: rgba(40, 0, 0, .6); border-color: #6b1a14; }
+:root[data-theme="matriz"] .ultima-hora h3::before { content: ""; }
+:root[data-theme="matriz"] .badge-uh { color: #000; box-shadow: 0 0 8px rgba(255, 90, 78, .6); }

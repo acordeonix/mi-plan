@@ -63,17 +63,45 @@ async function noticiasVarias(simbolos, key, forzar, alAvanzar) {
   if (!out.length && errores.length) throw new Error(errores[0]);
   return out;
 }
+// Palabras significativas de un titular (para detectar la misma historia en varios medios)
+const VACIAS = new Set('the a an and or of to in on for with as at by from is are be its it this that after over into amid says said will new stock stocks shares'.split(' '));
+const claves = (t) => new Set(t.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter((w) => w.length > 3 && !VACIAS.has(w)));
+function parecidas(a, b) { let c = 0; for (const w of a) if (b.has(w)) c++; return c >= 3 && c / Math.min(a.size, b.size) >= 0.5; }
+
 function unir(arr) {
-  const vistos = new Set(); const out = [];
+  const out = [];
   for (const n of arr.sort((a, b) => b.t - a.t)) {
-    const k = n.headline.toLowerCase().slice(0, 80);
-    if (vistos.has(k)) continue; vistos.add(k); out.push({ ...n, temas: temasDe(n) });
+    const k = claves(n.headline);
+    const igual = out.find((o) => o.headline.toLowerCase().slice(0, 80) === n.headline.toLowerCase().slice(0, 80) || parecidas(o._k, k));
+    if (igual) { igual.copias++; igual.fuentes.add(n.source); n.related.forEach((x) => { if (!igual.related.includes(x)) igual.related.push(x); }); continue; }
+    out.push({ ...n, related: [...n.related], temas: temasDe(n), _k: k, copias: 1, fuentes: new Set([n.source]) });
   }
   return out;
 }
 
+// ---------- Relevancia y última hora ----------
+const FUENTES_TOP = /reuters|bloomberg|wsj|wall street journal|financial times|cnbc|marketwatch|barron|associated press|\bap\b|the economist|nikkei|el financiero|expansi/i;
+const FUENTES_MED = /yahoo|benzinga|seeking ?alpha|motley|investopedia|forbes|business insider|fortune|zacks|tipranks|investing\.com/i;
+const FUERTES = /\b(surge|soar|plunge|plummet|tumble|crash|sink|slump|skyrocket|record|all-time high|halt|bankrupt|default|downgrade|upgrade|beats?|miss(es)?|cuts?|hikes?|layoffs?|strike|warning|shock|sell-?off|rally)\w*/i;
+const PESO_TEMA = { eco: 3, res: 2, fus: 2, inv: 2, reg: 1.5 };
+const horas = (n) => (Date.now() - n.t) / 3600000;
+
+export function puntuar(n, enLista) {
+  const razones = []; let p = 0;
+  const fuente = [...n.fuentes].join(' ');
+  if (FUENTES_TOP.test(fuente)) { p += 3; razones.push('fuente principal'); } else if (FUENTES_MED.test(fuente)) p += 1;
+  if (n.copias > 1) { p += Math.min(n.copias - 1, 4) * 1.5; razones.push(`${n.copias} medios`); }
+  const tm = Math.max(0, ...n.temas.map((t) => PESO_TEMA[t])); if (tm) { p += tm; razones.push(TEMAS[n.temas.sort((a, b) => PESO_TEMA[b] - PESO_TEMA[a])[0]].n.toLowerCase()); }
+  const mias = n.related.filter((x) => enLista?.has(x)); if (mias.length) { p += 3; razones.push('en tu lista'); }
+  if (FUERTES.test(n.headline)) { p += 2; razones.push('movimiento fuerte'); }
+  const h = horas(n);
+  p += h < 3 ? 3 : h < 12 ? 2 : h < 24 ? 1 : h < 72 ? 0 : -1;
+  const ultimaHora = h < 3 && (FUENTES_TOP.test(fuente) || FUERTES.test(n.headline) || n.temas.includes('eco') || n.copias > 1);
+  return { p, razones, ultimaHora };
+}
+
 // ---------- Estado de la vista ----------
-let modo = 'mercado', sector = 'tec', tema = 'todos', datos = [], cargando = false, error = '', clave = '', avance = '';
+let modo = 'mercado', sector = 'tec', tema = 'todos', orden = 'rel', datos = [], cargando = false, error = '', clave = '', avance = '';
 
 async function cargar(ctx, forzar = false) {
   const key = ctx.E.ajustes.fhKey; if (!key) return;
@@ -111,19 +139,20 @@ const hace = (t) => {
 };
 const traducir = (url) => `https://translate.google.com/translate?sl=en&tl=es&u=${encodeURIComponent(url)}`;
 
-export function tarjetaNoticia(n, enLista) {
+export function tarjetaNoticia(n, enLista, info) {
   const rel = n.related.slice(0, 4).map((s) => `<span class="chip ${enLista?.has(s) ? 'mio' : ''}" title="${esc(nombreDe(s) || s)}">${esc(s)}</span>`).join('');
-  return `<article class="noticia">
+  return `<article class="noticia ${info?.ultimaHora ? 'urgente' : ''}">
     ${n.image ? `<img src="${esc(n.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}
     <div>
-      <a class="titular" href="${esc(n.url)}" target="_blank" rel="noopener noreferrer">${esc(n.headline)}</a>
+      ${info?.ultimaHora ? '<span class="badge-uh">Última hora</span> ' : ''}<a class="titular" href="${esc(n.url)}" target="_blank" rel="noopener noreferrer">${esc(n.headline)}</a>
       ${n.summary ? `<p>${esc(n.summary.length > 260 ? n.summary.slice(0, 257) + '…' : n.summary)}</p>` : ''}
       <div class="meta-n">
-        <span>${esc(n.source)} · ${hace(n.t)}</span>
+        <span>${esc(n.source)}${n.copias > 1 ? ` y ${n.copias - 1} más` : ''} · ${hace(n.t)}</span>
         ${(n.temas || []).map((t) => `<span class="chip tema-${t}">${TEMAS[t].n}</span>`).join('')}
         ${rel}
         <a href="${traducir(n.url)}" target="_blank" rel="noopener noreferrer">Traducir</a>
       </div>
+      ${info?.razones?.length && orden === 'rel' ? `<div class="porque">Relevante por: ${esc(info.razones.join(' · '))}</div>` : ''}
     </div>
   </article>`;
 }
@@ -141,11 +170,15 @@ export function vNoticias(main, ctx) {
   cargar(ctx);
   const enLista = new Set(E.lista.map((a) => a.simbolo));
   const cuenta = Object.fromEntries(Object.keys(TEMAS).map((k) => [k, datos.filter((n) => n.temas.includes(k)).length]));
-  const visibles = tema === 'todos' ? datos : datos.filter((n) => n.temas.includes(tema));
+  const info = new Map(datos.map((n) => [n, puntuar(n, enLista)]));
+  const filtradas = tema === 'todos' ? datos : datos.filter((n) => n.temas.includes(tema));
+  const visibles = orden === 'rel' ? [...filtradas].sort((a, b) => info.get(b).p - info.get(a).p || b.t - a.t) : [...filtradas].sort((a, b) => b.t - a.t);
+  const urgentes = datos.filter((n) => info.get(n).ultimaHora).sort((a, b) => b.t - a.t).slice(0, 5);
   main.innerHTML = `
     <div class="barra">
       <div class="seg">${[['mercado', 'Mercado'], ['sector', 'Por sector'], ['lista', 'Mi lista'], ['mexico', 'México']].map(([v, l]) => `<button data-nmodo="${v}" class="${modo === v ? 'activa' : ''}">${l}</button>`).join('')}</div>
-      <a href="#" data-naccion="actualizar">Actualizar</a>
+      <div class="fila fin-n"><div class="seg">${[['rel', 'Más relevantes'], ['rec', 'Más recientes']].map(([v, l]) => `<button data-norden="${v}" class="${orden === v ? 'activa' : ''}">${l}</button>`).join('')}</div>
+      <a href="#" data-naccion="actualizar">Actualizar</a></div>
     </div>
     ${modo === 'sector' ? `<div class="chips-sector">${Object.entries(SECTORES).map(([k, s]) => `<button data-nsec="${k}" class="chip sec-${k} ${sector === k ? 'sel' : ''}">${s.n}</button>`).join('')}</div>
       <p class="meta">${esc(SECTORES[sector].d)} Empresas: ${UNIVERSO.filter((u) => u.sec === sector).map((u) => esc(u.n)).join(', ')}.</p>` : ''}
@@ -158,7 +191,9 @@ export function vNoticias(main, ctx) {
     </div>
     ${cargando ? `<div class="banner">Buscando noticias${avance ? ` (${avance})` : ''}…</div>` : ''}
     ${error ? `<div class="banner error">${esc(error)}</div>` : ''}
-    <div class="lista-noticias">${visibles.length ? visibles.slice(0, 60).map((n) => tarjetaNoticia(n, enLista)).join('') : !cargando && !error ? '<p class="vacio">No hay noticias con este filtro en los últimos días.</p>' : ''}</div>
+    ${urgentes.length && tema === 'todos' ? `<section class="ultima-hora"><h3><span class="punto"></span>Última hora <small>publicadas en las últimas 3 horas</small></h3>
+      <ul>${urgentes.map((n) => `<li><a href="${esc(n.url)}" target="_blank" rel="noopener noreferrer">${esc(n.headline)}</a> <small>${esc(n.source)} · ${hace(n.t)}${n.related.length ? ' · ' + n.related.slice(0, 3).map(esc).join(', ') : ''}</small></li>`).join('')}</ul></section>` : ''}
+    <div class="lista-noticias">${visibles.length ? visibles.slice(0, 60).map((n) => tarjetaNoticia(n, enLista, info.get(n))).join('') : !cargando && !error ? '<p class="vacio">No hay noticias con este filtro en los últimos días.</p>' : ''}</div>
     <div class="card"><h3>Cómo leer las noticias</h3><ul class="lectura">
       <li>Las noticias mueven el precio <b>en días</b>; lo que mueve tu inversión <b>en años</b> es si el negocio gana más. Pregúntate: ¿esto cambia cuánto va a ganar la empresa en 5 años?</li>
       <li>Para cuando lees un titular, el mercado ya lo reflejó en el precio. Comprar o vender por una noticia suele llegar tarde.</li>
@@ -170,11 +205,12 @@ export function vNoticias(main, ctx) {
 }
 
 export function eventosNoticias(ev, ctx) {
-  const b = ev.target.closest('[data-nmodo],[data-nsec],[data-ntema],[data-naccion]');
+  const b = ev.target.closest('[data-nmodo],[data-nsec],[data-ntema],[data-naccion],[data-norden]');
   if (!b || ev.type !== 'click') return false;
   ev.preventDefault();
   if (b.dataset.nmodo) { modo = b.dataset.nmodo; tema = 'todos'; }
   else if (b.dataset.nsec) { sector = b.dataset.nsec; tema = 'todos'; }
+  else if (b.dataset.norden) { orden = b.dataset.norden; ctx.refrescarNoticias(); return true; }
   else if (b.dataset.ntema) { tema = b.dataset.ntema; ctx.refrescarNoticias(); return true; }
   else if (b.dataset.naccion === 'actualizar') { cargar(ctx, true); return true; }
   cargar(ctx); ctx.refrescarNoticias(); return true;
@@ -186,7 +222,8 @@ export async function llenarDetalle(cont, sim, key, enLista) {
   if (!key) { cont.innerHTML = '<h3>Noticias recientes</h3><p class="vacio">Agrega tu llave de Finnhub en Ajustes para ver noticias de esta empresa.</p>'; return; }
   cont.innerHTML = '<h3>Noticias recientes</h3><p class="vacio">Buscando…</p>';
   try {
-    const arr = unir(await noticiasEmpresa(sim, key, 14)).slice(0, 6);
-    cont.innerHTML = `<h3>Noticias recientes <small>últimas 2 semanas</small></h3>${arr.length ? `<div class="lista-noticias compacta">${arr.map((n) => tarjetaNoticia(n, enLista)).join('')}</div>` : '<p class="vacio">Sin noticias recientes (los ETFs casi no tienen noticias propias).</p>'}`;
+    const todas = unir(await noticiasEmpresa(sim, key, 14));
+    const arr = todas.map((n) => [n, puntuar(n, enLista)]).sort((a, b) => b[1].p - a[1].p || b[0].t - a[0].t).slice(0, 6).map(([n]) => n);
+    cont.innerHTML = `<h3>Noticias recientes <small>últimas 2 semanas</small></h3>${arr.length ? `<div class="lista-noticias compacta">${arr.map((n) => tarjetaNoticia(n, enLista, puntuar(n, enLista))).join('')}</div>` : '<p class="vacio">Sin noticias recientes (los ETFs casi no tienen noticias propias).</p>'}`;
   } catch (e) { cont.innerHTML = `<h3>Noticias recientes</h3><p class="banner error">${esc(e.message)}</p>`; }
 }

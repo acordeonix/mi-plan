@@ -4,6 +4,7 @@ import * as M from './metrics.js';
 import { lineas, mini, barras, PALETA } from './charts.js';
 import { vDecisiones, DECISIONES_DEFAULT, alertas, perfilDe } from './decisiones.js';
 import { leerPlan, capacidad } from './plan.js';
+import { vRanking, eventosRanking } from './ranking.js';
 
 // ---------------- Estado ----------------
 const PREDETERMINADO = () => ({
@@ -118,16 +119,27 @@ function estado(t) { $('#estado').textContent = t; }
 
 // ---------------- Vistas ----------------
 const VISTAS = {
-  resumen: 'Resumen', decisiones: 'Decisiones', detalle: 'Detalle', comparar: 'Comparar', simulador: 'Simulador', practica: 'Práctica', aprende: 'Aprende', ajustes: 'Ajustes',
+  resumen: 'Resumen', decisiones: 'Decisiones', ranking: 'Ranking', detalle: 'Detalle', comparar: 'Comparar', simulador: 'Simulador', practica: 'Práctica', aprende: 'Aprende', ajustes: 'Ajustes',
 };
 
 function render() {
   $('#tabs').innerHTML = Object.entries(VISTAS).map(([k, v]) => `<button data-vista="${k}" class="${k === vista ? 'activa' : ''}">${v}</button>`).join('');
   const main = $('#vista');
-  ({ decisiones: (m) => vDecisiones(m, ctx()), resumen: vResumen, detalle: vDetalle, comparar: vComparar, simulador: vSimulador, practica: vPractica, aprende: vAprende, ajustes: vAjustes })[vista](main);
+  ({ ranking: (m) => vRanking(m, ctx()), decisiones: (m) => vDecisiones(m, ctx()), resumen: vResumen, detalle: vDetalle, comparar: vComparar, simulador: vSimulador, practica: vPractica, aprende: vAprende, ajustes: vAjustes })[vista](main);
 }
 
-function ctx() { return { E, activos, serieDe, tasasCetes, portafolio, nombreDe, guardar, render, M, cap, lecturaPlan: () => lecturaPlan }; }
+function ctx() {
+  return { E, activos, serieDe, tasasCetes, portafolio, nombreDe, guardar, render, M, cap, lecturaPlan: () => lecturaPlan, store,
+    refrescar: () => { if (vista === 'ranking') render(); },
+    aPesos: (serie, moneda) => (E.ajustes.enPesos && moneda === 'USD' && mercado.fix.length ? M.aPesos(serie, mercado.fix) : serie),
+    seriePropia: (sim) => { const a = E.lista.find((x) => x.simbolo === sim && x.fuente === 'td'); return a ? series[a.id] : null; },
+    agregarDesdeRanking: async (a, datos) => {
+      const id = a.simbolo.replace(/[^\w.-]/g, '_');
+      if (datos?.serie?.length && !series[id]) { series[id] = { ...datos, fuente: 'Twelve Data', nombre: a.simbolo }; store.saveSerie(id, series[id]).catch(() => {}); }
+      await agregar(a, !datos?.serie?.length); aviso(`${a.nombre} se agregó a tu lista.`);
+    },
+  };
+}
 
 function sinLlaves() {
   if (E.ajustes.tdKey || E.ajustes.avKey) return '';
@@ -452,6 +464,7 @@ async function agregar(a, descargar = true) {
 
 // ---------------- Eventos ----------------
 document.addEventListener('click', async (ev) => {
+  if (vista === 'ranking' && eventosRanking(ev, ctx()) !== false) return;
   const b = ev.target.closest('[data-vista],[data-abrir],[data-ir],[data-rango],[data-orden],[data-quitar],[data-accion],[data-borrarop]');
   if (!b || b.closest('#dlg')) return;
   if (b.tagName === 'A') ev.preventDefault();
@@ -480,6 +493,7 @@ document.addEventListener('click', async (ev) => {
 
 document.addEventListener('change', async (ev) => {
   const t = ev.target;
+  if (vista === 'ranking' && eventosRanking(ev, ctx())) return;
   if (t.id === 'selActivo') { seleccion = t.value; render(); }
   else if (t.dataset.comp) { t.checked ? comparar.add(t.dataset.comp) : comparar.delete(t.dataset.comp); render(); }
   else if (t.closest('#fSim')) { const f = new FormData(t.form); sim = { id: f.get('id'), mensual: +f.get('mensual') || 0, inicial: +f.get('inicial') || 0, anios: +f.get('anios') }; render(); }

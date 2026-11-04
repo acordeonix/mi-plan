@@ -162,3 +162,37 @@ td.motivo { white-space: normal; text-align: left; max-width: 260px; color: var(
 .reparto-cap label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
 .reparto-cap input[type=range] { width: 100%; padding: 0; accent-color: var(--acento); }
 .fuente { margin-top: 0; }
+
+/* ---------- Ranking ---------- */
+h2.sub { font-size: 20px; margin-top: 26px; }
+.rk-filtros { flex: 0 1 auto; } .rk-filtros label { display: flex; flex-direction: column; font-size: 12px; color: var(--tenue); gap: 3px; }
+.podio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 4px; }
+@media (max-width: 700px) { .podio { grid-template-columns: 1fr; } }
+.podio .card { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.podio .lugar { position: absolute; top: 12px; right: 14px; font-size: 34px; font-weight: 800; color: var(--linea); line-height: 1; }
+.podio .valor { font-size: 26px; font-weight: 700; margin: 6px 0 0; font-variant-numeric: tabular-nums; }
+.podio small { color: var(--tenue); }
+table.rk td.emp { text-align: left; white-space: normal; min-width: 150px; }
+table.rk th, table.rk td { padding: 8px 7px; }
+table.rk td.emp small { display: block; color: var(--tenue); font-size: 12px; }
+table.rk td:nth-child(3) { text-align: left; }
+table.rk td.spark { width: 110px; } table.rk .mini { height: 28px; width: 100px; }
+.mini-btn { padding: 5px 9px; font-size: 12.5px; white-space: nowrap; }
+.sectores .sector { cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
+.sectores .sector header { display: flex; justify-content: space-between; align-items: center; }
+.sectores .sector header small { color: var(--tenue); font-size: 12px; }
+.sectores .sector .nota { margin: 0; }
+.sectores .sector footer { font-size: 12.5px; color: var(--tenue); border-top: 1px dashed var(--linea); padding-top: 6px; }
+.activo-sec { border-color: var(--acento); box-shadow: 0 0 0 2px color-mix(in srgb, var(--acento) 25%, transparent); }
+.chip.sec-tec { background: color-mix(in srgb, #3b6fd4 16%, transparent); color: #3b6fd4; }
+.chip.sec-com { background: color-mix(in srgb, #8a4fd1 16%, transparent); color: #8a4fd1; }
+.chip.sec-cdi { background: color-mix(in srgb, #d0702e 16%, transparent); color: #c0661f; }
+.chip.sec-cbs { background: color-mix(in srgb, #2f9a6b 16%, transparent); color: #23855a; }
+.chip.sec-sal { background: color-mix(in srgb, #d24a6a 16%, transparent); color: #c23c5d; }
+.chip.sec-fin { background: color-mix(in srgb, #1f5f8b 16%, transparent); color: #1f5f8b; }
+.chip.sec-ene { background: color-mix(in srgb, #8a6d1f 18%, transparent); color: #7d621a; }
+.chip.sec-ind { background: color-mix(in srgb, #5a6b7d 18%, transparent); color: #4c5c6d; }
+.chip.sec-min { background: color-mix(in srgb, #a0522d 16%, transparent); color: #9a4a26; }
+.chip.sec-tel { background: color-mix(in srgb, #2b8a9e 16%, transparent); color: #227788; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chip[class*="sec-"] { filter: brightness(1.5); } }
+.podio .chip { align-self: flex-start; }

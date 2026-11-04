@@ -150,7 +150,7 @@ function vResumen(main) {
         <div><dt>3 años/año</dt><dd class="${cls(r.r3a)}">${pct(r.r3a)}</dd></div>
         <div><dt>Caída máx.</dt><dd class="baja">${pctS(r.ddMax, 0)}</dd></div>
       </dl>` : `<p class="vacio">${esc(err || 'Sin datos todavía.')}</p>`}
-      ${r && r.vsCetes1a != null ? `<footer class="${cls(r.vsCetes1a)}">${r.vsCetes1a >= 0 ? 'Le ganó' : 'Quedó debajo de'} CETES por ${pctS(Math.abs(r.vsCetes1a))} en 12 meses</footer>` : ''}
+      ${r && r.vsCetes1a != null ? `<footer class="${cls(r.vsCetes1a)}">${r.vsCetes1a >= 0 ? 'Le ganó a' : 'Quedó debajo de'} CETES por ${pctS(Math.abs(r.vsCetes1a))} en 12 meses</footer>` : ''}
     </article>`;
   }).join('');
   const nAl = alertas(ctx(), perfilDe(E.decisiones.perfil)).filter((x) => x.lvl !== 'info').length;
@@ -188,7 +188,7 @@ function vDetalle(main) {
   const a = lista.find((x) => x.id === seleccion); const s = serieDe(seleccion);
   const opciones = lista.map((x) => `<option value="${esc(x.id)}" ${x.id === seleccion ? 'selected' : ''}>${esc(x.simbolo)}</option>`).join('');
   const rangos = [[365, '1A'], [365 * 3, '3A'], [365 * 5, '5A'], [0, 'Todo']].map(([d, l]) => `<button data-rango="${d}" class="${d === rango ? 'activa' : ''}">${l}</button>`).join('');
-  if (!s) { main.innerHTML = `<div class="barra"><select id="selActivo">${opciones}</select></div><p class="vacio">${esc(series[seleccion]?.error || 'Sin datos todavía. Presiona "Actualizar precios".')}</p>`; return; }
+  if (!s) { main.innerHTML = `<div class="barra"><select id="selActivo">${opciones}</select>${a.id !== CETES_ID ? `<button class="btn sec" data-quitar="${esc(a.id)}">Quitar</button>` : ''}</div><p class="vacio">${esc(series[seleccion]?.error || 'Sin datos todavía. Presiona "Actualizar precios".')}</p>`; return; }
   const r = M.resumen(s.serie, tasasCetes());
   const visible = M.recortar(s.serie, rango);
   const cetesB = seleccion !== CETES_ID ? M.base100(indiceCetes(), visible[0].d) : [];

@@ -37,7 +37,10 @@ async function getJSON(url) {
 export async function twelveSerie(simbolo, key, dias = 1300) {
   if (!key) throw new ErrorDatos('Falta tu llave de Twelve Data (Ajustes).', 'llave');
   const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(simbolo)}&interval=1day&outputsize=${dias}&order=ASC&apikey=${encodeURIComponent(key)}`;
-  const j = await colaTD(() => getJSON(url));
+  let j;
+  try { j = await colaTD(() => getJSON(url)); }
+  catch (e) { if (/404|400/.test(e.message)) throw new ErrorDatos(`No existe el símbolo "${simbolo}". Usa el ticker (ej. AAPL para Apple), no el nombre.`, 'simbolo'); throw e; }
+  if (j.status === 'error' && /not found|invalid/i.test(j.message || '')) throw new ErrorDatos(`No existe el símbolo "${simbolo}". Usa el ticker (ej. AAPL para Apple), no el nombre.`, 'simbolo');
   if (j.status === 'error') {
     const plan = /plan|available starting/i.test(j.message || '');
     throw new ErrorDatos(plan ? `${simbolo} no está en el plan gratuito de Twelve Data.` : (j.message || 'Error de Twelve Data'), plan ? 'plan' : (j.code === 429 ? 'limite' : 'otro'));

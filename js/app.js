@@ -519,7 +519,7 @@ function render() {
   window.scrollTo(0, y);
 }
 function navHTML() {
-  return Object.entries(GRUPOS).map(([g, t]) => `<div class="ng g-${g}"><div class="ngt">${t}</div>${VIEWS.filter((v) => v.g === g).map((v) => `<a href="#${v.id}" data-v="${v.id}">${v.t}</a>`).join('')}</div>`).join('');
+  return Object.entries(GRUPOS).map(([g, t]) => `<div class="ng g-${g}"><div class="ngt">${t}</div>${VIEWS.filter((v) => v.g === g).map((v) => `<a href="#${v.id}" data-v="${v.id}">${v.t}</a>`).join('')}${g === 'fut' ? '<a href="inversiones.html">Inversiones ↗</a>' : ''}</div>`).join('');
 }
 
 // ---------------- guardado ----------------

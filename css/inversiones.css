@@ -297,3 +297,4 @@ table.rk td.spark { width: 110px; } table.rk .mini { height: 28px; width: 100px;
 :root[data-theme="matriz"] .ultima-hora { background: rgba(40, 0, 0, .6); border-color: #6b1a14; }
 :root[data-theme="matriz"] .ultima-hora h3::before { content: ""; }
 :root[data-theme="matriz"] .badge-uh { color: #000; box-shadow: 0 0 8px rgba(255, 90, 78, .6); }
+.explica { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linea); }

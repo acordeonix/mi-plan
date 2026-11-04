@@ -276,9 +276,11 @@ function vSimulador(main) {
         <label>Años atrás<select name="anios">${[1, 2, 3, 5].map((n) => `<option ${n === sim.anios ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       </form>
       <div id="simRes"></div><div id="gSim"></div>
+      <div id="simExp"></div>
       <p class="nota">Simula comprar el primer día de cada mes al precio de cierre, sin comisiones ni impuestos. Es lo que habría pasado, no lo que va a pasar.</p>
     </div>`;
   if (!s) { $('#simRes').innerHTML = '<p class="vacio">Sin datos para este activo.</p>'; return; }
+  if (!(sim.mensual > 0 || sim.inicial > 0)) { $('#simRes').innerHTML = '<p class="vacio">Pon una cantidad mensual o inicial para simular.</p>'; return; }
   const tramo = M.recortar(s.serie, sim.anios * 365);
   const rA = M.simularAportaciones(tramo, sim.mensual, sim.inicial);
   const rC = M.simularAportaciones(M.recortar(indiceCetes(), sim.anios * 365).filter((p) => p.d >= tramo[0].d), sim.mensual, sim.inicial);
@@ -295,6 +297,58 @@ function vSimulador(main) {
     rC && { nombre: 'CETES', datos: rC.curva.map((p) => ({ d: p.d, c: p.valor })), color: 'var(--cetes)', punteada: true },
     { nombre: 'Lo aportado', datos: rA.curva.map((p) => ({ d: p.d, c: p.aportado })), color: 'var(--tenue)' },
   ].filter(Boolean), { formatoY: (v) => '$' + (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v.toFixed(0)), alto: 280 });
+  $('#simExp').innerHTML = `<div class="explica"><h3>Qué pasó en esta simulación</h3><ul class="lectura">${explicarSim(s, tramo, rA, rC).map((t) => `<li>${t}</li>`).join('')}</ul></div>`;
+}
+
+// Explicación automática de una simulación, con los números de ese caso
+function explicarSim(s, tramo, rA, rC) {
+  const out = []; const nom = esc(nombreDe(sim.id)); const D = (v) => dinero(v, 'MXN', 0);
+  const ini = tramo[0], fin = tramo.at(-1);
+  const g = rA.final / rA.aportado - 1;
+  // 1. Resultado
+  let t = `Aportaste <b>${D(rA.aportado)}</b> y hoy tendrías <b>${D(rA.final)}</b> (${pct(g)}).`;
+  if (rC) {
+    const dif = rA.final - rC.final, prom = M.tasaPromedio(tasasCetes(), (Date.parse(fin.d) - Date.parse(ini.d)) / 864e5);
+    t += ` En CETES tendrías ${D(rC.final)}${prom != null ? `, con una tasa promedio de ${pctS(prom, 1)} anual en el periodo` : ''}: ${dif >= 0 ? `${nom} le ganó por <b>${D(dif)}</b>` : `CETES ganó por <b>${D(-dif)}</b>, sin el riesgo de las caídas`}.`;
+  }
+  out.push(t);
+  // 2. Punto de partida
+  const previo = s.serie.filter((p) => p.d < ini.d && Date.parse(p.d) >= Date.parse(ini.d) - 365 * 864e5);
+  if (previo.length > 20) {
+    const max = Math.max(...previo.map((p) => p.c), ini.c), min = Math.min(...previo.map((p) => p.c), ini.c);
+    if (ini.c >= max * 0.97) out.push(`<b>Empezaste cerca de un máximo</b>: el ${fechaLarga(ini.d)} ${nom} estaba en su precio más alto del año anterior. Entrar en un pico hace que los primeros meses se vean mal.`);
+    else if (ini.c <= max * 0.85) out.push(`<b>Empezaste después de una caída</b>: ${nom} venía ${pctS(ini.c / max - 1, 0)} abajo de su máximo del año anterior, un punto de entrada favorable que ayuda al resultado.`);
+    else if (ini.c <= min * 1.05) out.push(`Empezaste cerca del precio más bajo del año anterior, lo que ayuda al resultado.`);
+  }
+  // 3. Peor momento
+  let peor = null, abajo = 0;
+  for (const p of rA.curva) { const x = p.valor - p.aportado; if (x < 0) abajo++; if (!peor || x < peor.x) peor = { ...p, x }; }
+  if (peor && peor.x < 0) {
+    const rec = rA.curva.find((p) => p.d > peor.d && p.valor >= p.aportado);
+    out.push(`Tu <b>peor momento</b> fue el ${fechaLarga(peor.d)}: ibas <b>${D(-peor.x)} abajo</b> (${pct(peor.valor / peor.aportado - 1)}) de lo que habías puesto. ${rec ? `Te recuperaste el ${fechaLarga(rec.d)}, ${Math.max(1, meses(peor.d, rec.d))} ${Math.max(1, meses(peor.d, rec.d)) === 1 ? 'mes' : 'meses'} después.` : 'Todavía no te recuperas de ese punto.'} En total estuviste en pérdida ${pctS(abajo / rA.curva.length, 0)} del tiempo. ¿Lo habrías aguantado sin vender?`);
+  } else out.push('En ningún momento estuviste por debajo de lo que aportaste.');
+  // 4. Efecto del dólar
+  if (s.convertida && mercado.fix.length) {
+    const f0 = M.precioEn(mercado.fix, Date.parse(ini.d + 'T00:00:00Z')), f1 = M.precioEn(mercado.fix, Date.parse(fin.d + 'T00:00:00Z'));
+    const raw = series[sim.id]?.serie || [];
+    const u0 = M.precioEn(raw, Date.parse(ini.d + 'T00:00:00Z')), u1 = raw.at(-1);
+    if (f0 && f1 && u0 && u1) {
+      const fx = f1.c / f0.c - 1, usd = u1.c / u0.c - 1;
+      out.push(`<b>Efecto del dólar</b>: pasó de $${f0.c.toFixed(2)} a $${f1.c.toFixed(2)} (${pct(fx)}). En dólares, el precio de ${nom} cambió ${pct(usd)} en el periodo, y en pesos ${pct(fin.c / ini.c - 1)}. ${Math.abs(fx) > 0.03 ? (fx < 0 ? 'El peso se fortaleció, y eso <b>le restó</b> a tu rendimiento en pesos.' : 'El peso se debilitó, y eso <b>le sumó</b> a tu rendimiento en pesos.') : 'El tipo de cambio casi no influyó.'}`);
+    }
+  }
+  // 5. De golpe vs. cada mes
+  const nMeses = new Set(tramo.map((p) => p.d.slice(0, 7))).size;
+  if (sim.inicial > 0 && sim.mensual === 0 && nMeses > 2) {
+    const alt = M.simularAportaciones(tramo, sim.inicial / nMeses, 0);
+    out.push(`<b>De golpe vs. cada mes</b>: si en lugar de meter ${D(sim.inicial)} el primer día los hubieras repartido en ${nMeses} aportaciones de ${D(sim.inicial / nMeses)}, hoy tendrías ${D(alt.final)} (${alt.final >= rA.final ? `${D(alt.final - rA.final)} más` : `${D(rA.final - alt.final)} menos`}). ${alt.final > rA.final ? 'Repartir te protegió de haber entrado en mal momento.' : 'Meter todo al inicio ganó porque el dinero estuvo más tiempo invertido, algo que suele pasar cuando el mercado sube.'}`);
+  } else if (sim.mensual > 0 && sim.inicial === 0) {
+    const alt = M.simularAportaciones(tramo, 0, rA.aportado);
+    out.push(`<b>Cada mes vs. de golpe</b>: si hubieras metido los ${D(rA.aportado)} completos el primer día, hoy tendrías ${D(alt.final)} (${alt.final >= rA.final ? `${D(alt.final - rA.final)} más` : `${D(rA.final - alt.final)} menos`}). ${alt.final > rA.final ? 'Con aportaciones, parte del dinero estuvo menos tiempo invertido; a cambio, no dependiste de atinarle al día.' : 'Aportar cada mes te ayudó a comprar más barato en las caídas.'}`);
+  }
+  // 6. Notas
+  if (/Twelve Data/.test(s.fuente || '')) out.push('No incluye <b>dividendos</b> (en ETFs como VOO suman alrededor de 1 a 2% al año), ni comisiones ni impuestos; el resultado real puede ser un poco distinto.');
+  return out;
 }
 
 // ---------------- Práctica (portafolio simulado) ----------------

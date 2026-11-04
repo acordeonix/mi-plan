@@ -123,3 +123,36 @@ textarea.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fon
 .csvmap { margin-top: 12px; padding: 12px; border: 1px dashed var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 10px; }
 select.warnsel { border-color: var(--warn); background: var(--warn-bg); }
 [hidden] { display: none !important; }
+
+/* ---------- Tema Matriz (igual que Mis inversiones) ---------- */
+#lluvia { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .14; }
+#lluvia[hidden] { display: none; }
+:root[data-theme="matriz"] {
+  --bg: #000000; --panel: #020c05; --ink: #33ff77; --muted: #1fa24c; --line: #0c3d1c; --soft: #04190b;
+  --navy: #00ff66; --accent: #00ff66; --ok: #7dff9e; --ok-bg: #062b12; --bad: #ff5a4e; --bad-bg: #2a0806; --warn: #f2d14a; --warn-bg: #2a2306;
+  --g-sem: #00ff66; --g-mes: #33d6ff; --g-fut: #ff9df0; --g-cfg: #1fa24c;
+  --btn-ink: #000000;
+  --radius: 6px; --shadow: 0 0 0 1px rgba(0, 255, 102, .1), 0 0 16px rgba(0, 255, 102, .05);
+  color-scheme: dark;
+}
+:root[data-theme="matriz"] body, :root[data-theme="matriz"] input, :root[data-theme="matriz"] select,
+:root[data-theme="matriz"] textarea, :root[data-theme="matriz"] .btn { font-family: "Share Tech Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; }
+:root[data-theme="matriz"] #shell, :root[data-theme="matriz"] #login { position: relative; z-index: 1; }
+:root[data-theme="matriz"] #side { background: rgba(0, 0, 0, .9); }
+:root[data-theme="matriz"] #top { background: rgba(0, 0, 0, .85); }
+:root[data-theme="matriz"] main { background: transparent; }
+:root[data-theme="matriz"] .card, :root[data-theme="matriz"] .kpi, :root[data-theme="matriz"] .login-card { border: 1px solid var(--line); }
+:root[data-theme="matriz"] #top h2, :root[data-theme="matriz"] .brand, :root[data-theme="matriz"] .kpi-v,
+:root[data-theme="matriz"] .mini b, :root[data-theme="matriz"] .login-card h1 { text-shadow: 0 0 6px rgba(0, 255, 102, .45); }
+:root[data-theme="matriz"] .neg, :root[data-theme="matriz"] .kpi.bad .kpi-v { text-shadow: 0 0 6px rgba(255, 90, 78, .35); }
+:root[data-theme="matriz"] .card h3::before, :root[data-theme="matriz"] details.card summary::before { content: "> "; color: var(--accent); }
+:root[data-theme="matriz"] .card h3 { letter-spacing: .06em; }
+:root[data-theme="matriz"] nav a.active { background: rgba(0, 255, 102, .1); color: #b8ffcc; }
+:root[data-theme="matriz"] .btn.primary { background: transparent; color: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px rgba(0, 255, 102, .25) inset; }
+:root[data-theme="matriz"] .btn.primary:hover { background: rgba(0, 255, 102, .12); filter: none; }
+:root[data-theme="matriz"] input, :root[data-theme="matriz"] select, :root[data-theme="matriz"] textarea { background: #000; caret-color: var(--accent); }
+:root[data-theme="matriz"] input:focus, :root[data-theme="matriz"] select:focus { outline: 1px solid var(--accent); box-shadow: 0 0 10px rgba(0, 255, 102, .3); }
+:root[data-theme="matriz"] tr.total td { border-top-color: var(--accent); }
+:root[data-theme="matriz"] #toast { background: #001a08; color: var(--accent); border: 1px solid var(--accent); }
+:root[data-theme="matriz"] .logo { background: #000; color: #00ff66; border-color: #00ff66; box-shadow: 0 0 10px rgba(0, 255, 102, .4); }
+:root[data-theme="matriz"] ::selection { background: var(--accent); color: #000; }

@@ -385,6 +385,11 @@ function vAjustes(main) {
         <p class="nota">Las llaves se guardan solo en tu cuenta (Firestore), no en GitHub. La tasa manual se usa si Banxico no responde.</p>
         ${mercado.error ? `<p class="banner error">Último error de Banxico: ${esc(mercado.error)}</p>` : ''}
       </div>
+      <div class="card"><h3>Apariencia</h3>
+        <label class="mini-form">Tema <select id="selTema">${[['matriz', 'Matriz (negro y verde)'], ['claro', 'Claro'], ['oscuro', 'Oscuro'], ['auto', 'Automático (según tu equipo)']].map(([v, l]) => `<option value="${v}" ${(document.documentElement.dataset.theme || 'matriz') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+        <label class="mini-form"><input type="checkbox" id="chkLluvia" ${window.lluviaActiva?.() ? 'checked' : ''}> Lluvia de caracteres de fondo (solo en tema Matriz)</label>
+        <p class="nota">Se guarda en este dispositivo.</p>
+      </div>
       <div class="card"><h3>Respaldo</h3>
         <p>Descarga tu lista, ajustes y operaciones de práctica (sin precios).</p>
         <div class="fila"><button class="btn sec" data-accion="exportar">Descargar JSON</button>
@@ -497,6 +502,8 @@ document.addEventListener('change', async (ev) => {
   if (t.id === 'selActivo') { seleccion = t.value; render(); }
   else if (t.dataset.comp) { t.checked ? comparar.add(t.dataset.comp) : comparar.delete(t.dataset.comp); render(); }
   else if (t.closest('#fSim')) { const f = new FormData(t.form); sim = { id: f.get('id'), mensual: +f.get('mensual') || 0, inicial: +f.get('inicial') || 0, anios: +f.get('anios') }; render(); }
+  else if (t.id === 'selTema') { try { localStorage.setItem('inv_tema', t.value); } catch {} document.documentElement.dataset.theme = t.value; window.lluviaRefrescar?.(); render(); }
+  else if (t.id === 'chkLluvia') { try { localStorage.setItem('inv_lluvia', t.checked ? '1' : '0'); } catch {} window.lluviaRefrescar?.(); }
   else if (t.id === 'inpInicial') { E.practica.inicial = Number(t.value) || 0; guardar(); render(); }
   else if (t.id === 'inpRestaurar' && t.files[0]) {
     try {

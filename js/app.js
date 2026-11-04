@@ -17,9 +17,10 @@ const VIEWS = [
 const GRUPOS = { sem: 'Cada semana', mes: 'Cada mes', fut: 'Tu futuro', cfg: 'Configuración' };
 const PAL = {
   dark: { navy: '#7FB2F0', blue: '#4A86C5', green: '#5CC86A', red: '#FF7A6E', orange: '#F5A04A', light: '#9FB7D9', gray: '#8A93A0', purple: '#C08AE8' },
+  matriz: { navy: '#00FF66', blue: '#33D6FF', green: '#7DFF9E', red: '#FF5A4E', orange: '#F2D14A', light: '#B8FF5C', gray: '#1FA24C', purple: '#FF9DF0' },
   light: { navy: '#1F3A5F', blue: '#3C6E9F', green: '#2E7D32', red: '#C0392B', orange: '#E67E22', light: '#8FAADC', gray: '#8A8F98', purple: '#7B3FA0' },
 };
-const tema = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
+const tema = () => { const t = document.documentElement.dataset.theme; return t === 'light' || t === 'matriz' ? t : 'dark'; };
 let C = PAL[tema()];
 
 // ---------------- utilidades de UI ----------------
@@ -58,8 +59,9 @@ function parseVal(type, raw) {
 function destroyCharts() { charts.forEach((c) => c.destroy()); charts = []; }
 function mkChart(id, cfg) {
   const el = document.getElementById(id); if (!el || !window.Chart) return;
-  const dark = tema() === 'dark';
-  const grid = dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.06)', txt = dark ? '#cfd6df' : '#4a5563';
+  const t = tema(), dark = t !== 'light';
+  const grid = t === 'matriz' ? 'rgba(0,255,102,.12)' : dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.06)', txt = t === 'matriz' ? '#33ff77' : dark ? '#cfd6df' : '#4a5563';
+  window.Chart.defaults.font.family = t === 'matriz' ? '"Share Tech Mono", ui-monospace, Consolas, monospace' : 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
   cfg.options = Object.assign({ responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
     plugins: { legend: { position: 'bottom', labels: { color: txt, boxWidth: 12 } }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${money(c.parsed.y ?? c.parsed)}` } } },
     scales: cfg.type === 'doughnut' ? {} : { x: { ticks: { color: txt }, grid: { color: grid } }, y: { ticks: { color: txt, callback: (v) => money(v) }, grid: { color: grid } } } }, cfg.options || {});
@@ -113,7 +115,7 @@ V.inicio = () => {
     mkChart('c-ahorro', { type: 'bar', data: { labels: P.filas.map((r) => mes(r.mes)), datasets: [ds('Fondo de emergencia', P.filas.map((r) => r.fondoEmergencia), C.blue, { backgroundColor: C.blue }), ds('Reinversión Acordeonix', P.filas.map((r) => r.reinversion), C.red, { backgroundColor: C.red })] }, options: { scales: { x: { stacked: true }, y: { stacked: true, ticks: { callback: (v) => money(v) } } } } });
     const f = R.pres.f1, k = 52 / 12;
     const parts = [['Casa (Jazmín)', f.jazmin], ['Gasolina', f.gasolina], ['Renta', f.renta], ['Escuela', f.escuela], ['Otros', f.otros], ['Colchón', f.colchon], ['Temporada', f.estacionales], ['Autos', R.pres.autosW], ['Préstamo NU', R.pres.prestamoW], ['Suscripciones', R.pres.subsW], ['Tarjetas', Math.max(0, f.plan)]];
-    mkChart('c-pie', { type: 'doughnut', data: { labels: parts.map((p) => p[0]), datasets: [{ data: parts.map((p) => p[1] * k), borderColor: tema() === 'dark' ? '#161b22' : '#fff', backgroundColor: tema() === 'dark' ? ['#4A86C5', '#7FB2F0', '#9FB7D9', '#5DB8B6', '#F5A04A', '#5CC86A', '#D4C35A', '#C08AE8', '#C77B7B', '#8A93A0', '#FF7A6E'] : ['#1F3A5F', '#3C6E9F', '#8FAADC', '#5DA5A4', '#E67E22', '#2E7D32', '#B5A642', '#7B3FA0', '#A05252', '#8A8F98', '#C0392B'] }] }, options: { plugins: { legend: { position: 'right' }, tooltip: { callbacks: { label: (c) => `${c.label}: ${money(c.parsed)}` } } } } });
+    mkChart('c-pie', { type: 'doughnut', data: { labels: parts.map((p) => p[0]), datasets: [{ data: parts.map((p) => p[1] * k), borderColor: tema() === 'matriz' ? '#000' : tema() === 'dark' ? '#161b22' : '#fff', backgroundColor: tema() === 'matriz' ? ['#00FF66', '#33D6FF', '#F2D14A', '#B8FF5C', '#FF9DF0', '#7DFF9E', '#00A845', '#2BB8A0', '#FF5A4E', '#1FA24C', '#C8FFD8'] : tema() === 'dark' ? ['#4A86C5', '#7FB2F0', '#9FB7D9', '#5DB8B6', '#F5A04A', '#5CC86A', '#D4C35A', '#C08AE8', '#C77B7B', '#8A93A0', '#FF7A6E'] : ['#1F3A5F', '#3C6E9F', '#8FAADC', '#5DA5A4', '#E67E22', '#2E7D32', '#B5A642', '#7B3FA0', '#A05252', '#8A8F98', '#C0392B'] }] }, options: { plugins: { legend: { position: 'right' }, tooltip: { callbacks: { label: (c) => `${c.label}: ${money(c.parsed)}` } } } } });
   } };
 };
 const addD = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
@@ -623,7 +625,7 @@ async function onClick(e) {
   }
   if (a === 'logout') { await store.signOut(); }
   if (a === 'menu') document.body.classList.toggle('nav-open');
-  if (a === 'tema') { const t = tema() === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.setItem('tema', t); } catch {} C = PAL[t]; if (state) render(); }
+  if (a === 'tema') { const sig = { matriz: 'light', light: 'dark', dark: 'matriz' }; const t = sig[tema()]; document.documentElement.dataset.theme = t; try { localStorage.setItem('plan_tema', t); } catch {} C = PAL[t]; window.lluviaRefrescar?.(); if (state) render(); toast?.(`Tema: ${{ matriz: 'Matriz', light: 'Claro', dark: 'Oscuro' }[t]}`); }
 }
 function exportar() {
   const blob = new Blob([JSON.stringify({ version: 1, exportado: HOY, ...state }, null, 1)], { type: 'application/json' });

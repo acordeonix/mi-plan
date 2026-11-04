@@ -196,3 +196,56 @@ table.rk td.spark { width: 110px; } table.rk .mini { height: 28px; width: 100px;
 .chip.sec-tel { background: color-mix(in srgb, #2b8a9e 16%, transparent); color: #227788; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chip[class*="sec-"] { filter: brightness(1.5); } }
 .podio .chip { align-self: flex-start; }
+
+/* ---------- Temas elegibles ---------- */
+:root[data-theme="claro"] {
+  --fondo: #f4f2ee; --panel: #ffffff; --linea: #e3dfd7; --texto: #1d232b; --tenue: #6d7480;
+  --acento: #1f5f8b; --sube: #12805c; --baja: #c2412d; --cetes: #a0742b;
+  --s1: #1f5f8b; --s2: #d07a2e; --s3: #6a4fb3; --s4: #12805c; --s5: #c2412d; --s6: #2b8a9e; color-scheme: light;
+}
+:root[data-theme="oscuro"] {
+  --fondo: #0f1720; --panel: #16212c; --linea: #263443; --texto: #e7ecf1; --tenue: #8d99a6;
+  --acento: #6db3e3; --sube: #3ec48f; --baja: #f0745e; --cetes: #d9ac5c;
+  --s1: #6db3e3; --s2: #f0a35e; --s3: #a993f0; --s4: #3ec48f; --s5: #f0745e; --s6: #58c4d8; --sombra: none; color-scheme: dark;
+}
+
+/* ---------- Tema Matriz ---------- */
+#lluvia { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .16; }
+#lluvia[hidden] { display: none; }
+:root[data-theme="matriz"] {
+  --fondo: #000000; --panel: rgba(0, 14, 4, .88); --linea: #0c3d1c; --texto: #33ff77; --tenue: #1fa24c;
+  --acento: #00ff66; --sube: #7dff9e; --baja: #ff5a4e; --cetes: #f2d14a;
+  --s1: #00ff66; --s2: #f2d14a; --s3: #33d6ff; --s4: #b8ff5c; --s5: #ff5a4e; --s6: #ff9df0;
+  --sombra: 0 0 0 1px rgba(0, 255, 102, .08), 0 0 18px rgba(0, 255, 102, .06);
+  --radio: 6px; color-scheme: dark;
+  font-family: "Share Tech Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+:root[data-theme="matriz"] body { background: #000; }
+:root[data-theme="matriz"] .top, :root[data-theme="matriz"] main, :root[data-theme="matriz"] .login { position: relative; z-index: 1; }
+:root[data-theme="matriz"] .top { background: rgba(0, 0, 0, .82); border-bottom-color: #0c3d1c; }
+:root[data-theme="matriz"] .card, :root[data-theme="matriz"] .metricas > div, :root[data-theme="matriz"] dialog { backdrop-filter: blur(2px); }
+:root[data-theme="matriz"] h2, :root[data-theme="matriz"] .marca, :root[data-theme="matriz"] .referencia b,
+:root[data-theme="matriz"] .resultados b, :root[data-theme="matriz"] .precio, :root[data-theme="matriz"] .metricas dd,
+:root[data-theme="matriz"] .podio .valor, :root[data-theme="matriz"] .cuenta b { text-shadow: 0 0 6px rgba(0, 255, 102, .45); }
+:root[data-theme="matriz"] .baja { text-shadow: 0 0 6px rgba(255, 90, 78, .35); }
+:root[data-theme="matriz"] h3 { color: #22c55e; letter-spacing: .12em; }
+:root[data-theme="matriz"] h3::before { content: "> "; color: var(--acento); }
+:root[data-theme="matriz"] .btn { background: transparent; color: var(--acento); border: 1px solid var(--acento); box-shadow: 0 0 8px rgba(0, 255, 102, .25) inset; text-transform: uppercase; letter-spacing: .05em; }
+:root[data-theme="matriz"] .btn:hover { background: rgba(0, 255, 102, .12); }
+:root[data-theme="matriz"] .btn.sec { border-color: #0c3d1c; color: var(--texto); box-shadow: none; }
+:root[data-theme="matriz"] .seg button.activa, :root[data-theme="matriz"] .tabs button.activa { background: rgba(0, 255, 102, .14); color: #b8ffcc; box-shadow: 0 0 0 1px var(--acento) inset; }
+:root[data-theme="matriz"] .tabs button.activa::before { content: "["; } :root[data-theme="matriz"] .tabs button.activa::after { content: "]"; }
+:root[data-theme="matriz"] select, :root[data-theme="matriz"] input, :root[data-theme="matriz"] textarea { background: #000; color: var(--texto); border-color: #0c3d1c; font-family: inherit; caret-color: var(--acento); }
+:root[data-theme="matriz"] input:focus, :root[data-theme="matriz"] select:focus, :root[data-theme="matriz"] textarea:focus { outline: 1px solid var(--acento); box-shadow: 0 0 10px rgba(0, 255, 102, .3); }
+:root[data-theme="matriz"] .banner { background: rgba(0, 40, 14, .85); border-color: #11602b; }
+:root[data-theme="matriz"] .banner.error { background: rgba(50, 0, 0, .8); border-color: #6b1a14; color: #ffb3ad; }
+:root[data-theme="matriz"] .chip { background: rgba(0, 255, 102, .1) !important; color: var(--acento) !important; filter: none !important; border: 1px solid #0c3d1c; }
+:root[data-theme="matriz"] .mezcla .b { background: #00a845; color: #001a08; } :root[data-theme="matriz"] .mezcla .c { background: #0a2a14; color: var(--texto); }
+:root[data-theme="matriz"] .progreso span { background: var(--acento); box-shadow: 0 0 8px var(--acento); }
+:root[data-theme="matriz"] .toast { background: #001a08; color: var(--acento); border: 1px solid var(--acento); }
+:root[data-theme="matriz"] .toast.error { background: #2a0000; color: #ffb3ad; border-color: var(--baja); }
+:root[data-theme="matriz"] .tip { background: #000; }
+:root[data-theme="matriz"] tr.cetes td { background: rgba(242, 209, 74, .06); }
+:root[data-theme="matriz"] ::selection { background: var(--acento); color: #000; }
+:root[data-theme="matriz"] .podio .lugar { color: #0c3d1c; }
+:root[data-theme="matriz"] a { color: #7dffb0; }

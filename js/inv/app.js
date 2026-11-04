@@ -5,6 +5,7 @@ import { lineas, mini, barras, PALETA } from './charts.js';
 import { vDecisiones, DECISIONES_DEFAULT, alertas, perfilDe } from './decisiones.js';
 import { leerPlan, capacidad } from './plan.js';
 import { vRanking, eventosRanking } from './ranking.js';
+import { vNoticias, eventosNoticias, llenarDetalle } from './noticias.js';
 
 // ---------------- Estado ----------------
 const PREDETERMINADO = () => ({
@@ -119,18 +120,19 @@ function estado(t) { $('#estado').textContent = t; }
 
 // ---------------- Vistas ----------------
 const VISTAS = {
-  resumen: 'Resumen', decisiones: 'Decisiones', ranking: 'Ranking', detalle: 'Detalle', comparar: 'Comparar', simulador: 'Simulador', practica: 'Práctica', aprende: 'Aprende', ajustes: 'Ajustes',
+  resumen: 'Resumen', decisiones: 'Decisiones', ranking: 'Ranking', noticias: 'Noticias', detalle: 'Detalle', comparar: 'Comparar', simulador: 'Simulador', practica: 'Práctica', aprende: 'Aprende', ajustes: 'Ajustes',
 };
 
 function render() {
   $('#tabs').innerHTML = Object.entries(VISTAS).map(([k, v]) => `<button data-vista="${k}" class="${k === vista ? 'activa' : ''}">${v}</button>`).join('');
   const main = $('#vista');
-  ({ ranking: (m) => vRanking(m, ctx()), decisiones: (m) => vDecisiones(m, ctx()), resumen: vResumen, detalle: vDetalle, comparar: vComparar, simulador: vSimulador, practica: vPractica, aprende: vAprende, ajustes: vAjustes })[vista](main);
+  ({ noticias: (m) => vNoticias(m, ctx()), ranking: (m) => vRanking(m, ctx()), decisiones: (m) => vDecisiones(m, ctx()), resumen: vResumen, detalle: vDetalle, comparar: vComparar, simulador: vSimulador, practica: vPractica, aprende: vAprende, ajustes: vAjustes })[vista](main);
 }
 
 function ctx() {
   return { E, activos, serieDe, tasasCetes, portafolio, nombreDe, guardar, render, M, cap, lecturaPlan: () => lecturaPlan, store,
     refrescar: () => { if (vista === 'ranking') render(); },
+    refrescarNoticias: () => { if (vista === 'noticias') render(); },
     aPesos: (serie, moneda) => (E.ajustes.enPesos && moneda === 'USD' && mercado.fix.length ? M.aPesos(serie, mercado.fix) : serie),
     seriePropia: (sim) => { const a = E.lista.find((x) => x.simbolo === sim && x.fuente === 'td'); return a ? series[a.id] : null; },
     agregarDesdeRanking: async (a, datos) => {
@@ -221,12 +223,14 @@ function vDetalle(main) {
       <div><dt>Meses positivos</dt><dd>${pctS(r.positivos, 0)}</dd></div>
     </dl>
     <div class="card"><h3>Cómo leerlo</h3><ul class="lectura">${interpretacion(r, s)}</ul></div>
+    ${a.id !== CETES_ID && a.mercado === 'US' && a.fuente !== 'csv' ? '<div class="card" id="detNoticias"></div>' : ''}
     <div class="dos">
       ${seleccion !== CETES_ID ? `<div class="card"><h3>Contra CETES (base 100)</h3><div id="gVs"></div></div>` : ''}
       <div class="card"><h3>Caídas desde su máximo</h3><div id="gDD"></div></div>
     </div>
     <div class="card"><h3>Rendimiento por año</h3><div id="gAnios"></div><p class="nota">El último año está incompleto (barra clara).</p></div>`;
   const fmtP = (v) => (s.moneda === 'USD' ? 'US$' : '$') + v.toLocaleString('es-MX', { maximumFractionDigits: v < 100 ? 2 : 0 });
+  llenarDetalle($('#detNoticias'), a.simbolo, E.ajustes.fhKey, new Set(E.lista.map((x) => x.simbolo)));
   lineas($('#gPrecio'), [{ nombre: a.simbolo, datos: visible, area: true, color: 'var(--s1)' }], { formatoY: fmtP, alto: 280 });
   if (seleccion !== CETES_ID) lineas($('#gVs'), [{ nombre: a.simbolo, datos: M.base100(visible, visible[0].d) }, { nombre: 'CETES 28', datos: cetesB, color: 'var(--cetes)', punteada: true }], { formatoY: (v) => v.toFixed(0), linea0: 100 });
   lineas($('#gDD'), [{ nombre: 'Caída', datos: M.drawdowns(visible).curva, area: true, color: 'var(--baja)' }], { formatoY: (v) => `${(v * 100).toFixed(0)}%`, linea0: 0, alto: 200 });
@@ -374,6 +378,8 @@ function vAjustes(main) {
             <input name="tdKey" value="${esc(A.tdKey)}" autocomplete="off" placeholder="API key"></label>
           <label>Alpha Vantage — BMV (25 consultas/día) <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener">pedir llave</a>
             <input name="avKey" value="${esc(A.avKey)}" autocomplete="off" placeholder="API key"></label>
+          <label>Finnhub — noticias de empresas y del mercado <a href="https://finnhub.io/register" target="_blank" rel="noopener">crear cuenta</a>
+            <input name="fhKey" value="${esc(A.fhKey || '')}" autocomplete="off" placeholder="API key"></label>
           <label>Banxico SIE — CETES y dólar FIX <a href="https://www.banxico.org.mx/SieAPIRest/service/v1/token" target="_blank" rel="noopener">pedir token</a>
             <input name="bxToken" value="${esc(A.bxToken)}" autocomplete="off" placeholder="token"></label>
           <div class="fila"><label>Serie de CETES (Banxico)<input name="serieCetes" value="${esc(A.serieCetes)}"></label>
@@ -470,6 +476,7 @@ async function agregar(a, descargar = true) {
 // ---------------- Eventos ----------------
 document.addEventListener('click', async (ev) => {
   if (vista === 'ranking' && eventosRanking(ev, ctx()) !== false) return;
+  if (vista === 'noticias' && eventosNoticias(ev, ctx())) return;
   const b = ev.target.closest('[data-vista],[data-abrir],[data-ir],[data-rango],[data-orden],[data-quitar],[data-accion],[data-borrarop]');
   if (!b || b.closest('#dlg')) return;
   if (b.tagName === 'A') ev.preventDefault();
@@ -486,7 +493,7 @@ document.addEventListener('click', async (ev) => {
     E.practica.ops = E.practica.ops.filter((o) => o.id !== b.dataset.borrarop); guardar(); render();
   } else if (b.dataset.accion === 'nuevo') dialogoAgregar();
   else if (b.dataset.accion === 'exportar') {
-    const blob = new Blob([JSON.stringify({ ...E, ajustes: { ...E.ajustes, tdKey: '', avKey: '', bxToken: '' } }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ ...E, ajustes: { ...E.ajustes, tdKey: '', avKey: '', bxToken: '', fhKey: '' } }, null, 2)], { type: 'application/json' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `inversiones_${hoy()}.json`; a.click();
   } else if (b.dataset.accion === 'forzar') actualizarTodo(true);
   else if (b.dataset.accion === 'releerPlan') { lecturaPlan = null; render(); cargarPlan(); }
@@ -509,7 +516,7 @@ document.addEventListener('change', async (ev) => {
     try {
       const j = JSON.parse(await t.files[0].text());
       if (!Array.isArray(j.lista)) throw new Error('Archivo no válido.');
-      E = { ...PREDETERMINADO(), ...j, ajustes: { ...E.ajustes, ...j.ajustes, tdKey: E.ajustes.tdKey, avKey: E.ajustes.avKey, bxToken: E.ajustes.bxToken } };
+      E = { ...PREDETERMINADO(), ...j, ajustes: { ...E.ajustes, ...j.ajustes, tdKey: E.ajustes.tdKey, avKey: E.ajustes.avKey, bxToken: E.ajustes.bxToken, fhKey: E.ajustes.fhKey } };
       guardar(); aviso('Respaldo restaurado.'); actualizarTodo();
     } catch (e) { aviso(e.message, 'error'); }
   }
@@ -519,7 +526,7 @@ document.addEventListener('submit', async (ev) => {
   const f = ev.target;
   if (f.id === 'fAjustes') {
     ev.preventDefault(); const d = new FormData(f); const antes = { ...E.ajustes };
-    E.ajustes = { ...E.ajustes, tdKey: d.get('tdKey').trim(), avKey: d.get('avKey').trim(), bxToken: d.get('bxToken').trim(), serieCetes: d.get('serieCetes').trim() || API.SERIES_BANXICO.cetes28, cetesManual: Number(d.get('cetesManual')) || 0, horas: Math.max(1, Number(d.get('horas')) || 12), enPesos: d.get('enPesos') === 'on' };
+    E.ajustes = { ...E.ajustes, tdKey: d.get('tdKey').trim(), fhKey: (d.get('fhKey') || '').trim(), avKey: d.get('avKey').trim(), bxToken: d.get('bxToken').trim(), serieCetes: d.get('serieCetes').trim() || API.SERIES_BANXICO.cetes28, cetesManual: Number(d.get('cetesManual')) || 0, horas: Math.max(1, Number(d.get('horas')) || 12), enPesos: d.get('enPesos') === 'on' };
     guardar(); aviso('Ajustes guardados.');
     const cambioLlaves = ['tdKey', 'avKey', 'bxToken', 'serieCetes'].some((k) => antes[k] !== E.ajustes[k]);
     if (cambioLlaves) actualizarTodo(true); else render();
